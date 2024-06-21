@@ -30,9 +30,6 @@ name = "torch_cu117"
 url = "https://download.pytorch.org/whl/cu117/"
 secondary = true
 
-[tool.poetry.config]
-virtualenvs.in-project = true
-
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
