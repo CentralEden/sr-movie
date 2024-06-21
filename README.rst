@@ -11,3 +11,9 @@
 ## インストール
 
 1. リポジトリをクローンします。
+
+git submodule update --init
+poetry install
+poetry shell
+cd Real-ESRGAN
+python setup.py develop
