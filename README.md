@@ -26,8 +26,14 @@ python setup.py develop
 
 ```
 python .\main.py create_ds
+python .\main.py gen_low_scale
+python .\Real-ESRGAN\scripts\generate_meta_info_pairdata.py --input D:\sr-movie\training\datasets\raw D:\sr-movie\training\datasets\low_scale --meta_info D:\sr-movie\training\datasets\meta_info\meta_info_pair.txt
+
+
 python .\Real-ESRGAN\scripts\generate_multiscale_DF2K.py --input .\training\datasets\raw --output .\training\datasets\multiscale
 python .\Real-ESRGAN\scripts\generate_meta_info_pairdata.py --input .\training\datasets\raw .\training\datasets\multiscale --meta_info .\training\datasets\meta_info\meta_info_sub_pair.txt
+
+python .\Real-ESRGAN\scripts\generate_meta_info_pairdata.py --input .\training\datasets\raw .\training\datasets\multiscale --meta_info .\training\datasets\meta_info\meta_info_pair.txt
 
 python .\Real-ESRGAN\scripts\extract_subimages.py --input .\training\datasets\raw --output .\training\datasets\sub --crop_size 400 --step 200
 python .\Real-ESRGAN\scripts\generate_multiscale_DF2K.py --input .\training\datasets\sub --output .\training\datasets\multiscale_sub
@@ -42,8 +48,8 @@ python .\Real-ESRGAN\scripts\generate_meta_info.py --input .\training\datasets\r
 
 ```
 # HR only
-Invoke-WebRequest -Uri https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -outfile .\Real-ESRGAN\experiments\pretrained_models\RealESRGAN_x4plus.pth
-Invoke-WebRequest -Uri https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.3/RealESRGAN_x4plus_netD.pth -outfile .\Real-ESRGAN\experiments\pretrained_models\RealESRGAN_x4plus_netD.pth
+Invoke-WebRequest -Uri https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -outfile D:\sr-movie\training\pretrained_models\RealESRGAN_x4plus.pth
+Invoke-WebRequest -Uri https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.3/RealESRGAN_x4plus_netD.pth -outfile D:\sr-movie\training\pretrained_models\RealESRGAN_x4plus_netD.pth
 cp .\Real-ESRGAN\options\finetune_realesrgan_x4plus.yml  .\training
 cp .\Real-ESRGAN\options\finetune_realesrgan_x4plus_pairdata.yml  .\training
 python .\Real-ESRGAN\realesrgan\train.py -opt .\training\finetune_realesrgan_x4plus.yml --debug
@@ -51,5 +57,11 @@ python .\Real-ESRGAN\realesrgan\train.py -opt .\training\finetune_realesrgan_x4p
 python .\Real-ESRGAN\realesrgan\train.py -opt .\training\finetune_realesrgan_x4plus.yml --auto_resume
 
 # pair
-python .\Real-ESRGAN\realesrgan\train.py -opt .\training\finetune_realesrgan_x4plus_pairdata.yml --auto_resume
+python .\Real-ESRGAN\realesrgan\train.py -opt D:\sr-movie\training\finetune_realesrgan_x4plus_pairdata.yml --auto_resume
+```
+
+Test
+
+```
+
 ```
