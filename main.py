@@ -71,29 +71,28 @@ def main():
         opt = json.load(config_file)
 
     if test_flag:
-        print("テストモードでの処理を開始します。")
+        print("Start Test Mode")
+        input_path = os.path.join(opt['common']['input_base_path'] , opt['common']['input_file'])
+        output_base_path = create_directory_for_process(opt['common']['output_base_path'])
         video_info = ffmpeg.probe(input_path)
         total_duration = float(video_info['format']['duration'])
         time_intervals = []
-        for seconds in range(0, int(total_duration), 300):  # 秒数
+        for seconds in range(0, int(total_duration), opt['test']['output_interval_sec']):  # 秒数
             hours = seconds // 3600
             minutes = (seconds % 3600) // 60
             seconds = seconds % 60
             time_intervals.append(f"{hours:02}:{minutes:02}:{seconds:02}")
-        print("5分毎の時間リスト:", time_intervals)
-        # frame_rate, vcodec, pix_fmt = get_video_properties(input_path)
-        for upscale in [1, 2, 4]:
-            print(f"アップスケール率: {upscale}")
-            upscale_output_folder = f'{base_path}\\upscale_{upscale}\\'
-            resize_output_folder = f'{base_path}\\resize_{upscale}\\'
+        for upscale in opt['test']['upscale_rates']:
+            print(f"Upscale rate: {upscale}")
+            upscale_output_folder = f'{output_base_path}\\upscale_{upscale}\\'
+            resize_output_folder = f'{output_base_path}\\resize_{upscale}\\'
             os.makedirs(upscale_output_folder, exist_ok=True)
             os.makedirs(resize_output_folder, exist_ok=True)
-            print(f"アップスケール {upscale} の出力フォルダを作成しました: {upscale_output_folder}")
-            print(f"リサイズ {upscale} の出力フォルダを作成しました: {resize_output_folder}")
+            # resize
             for i, time_interval in enumerate(time_intervals[1:]):
                 resize_image_path = f'{resize_output_folder}frame_{i:08d}.png'
-                ffmpeg.input(input_path, ss=time_interval).output(resize_image_path, vframes=1,vf=f'scale={1280 / upscale}:-1', vcodec='png').run()           
-            # 超解像処理
+                ffmpeg.input(input_path, ss=time_interval).output(resize_image_path, vframes=1,vf=f'scale={opt["test"]["output_px_width"] / upscale}:-1', vcodec='png').run()           
+            # super resolution
             command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', resize_output_folder, '-o', upscale_output_folder, '-n', 'realesr-general-x4v3', '-g', '0', '-s', f'{upscale}']
             print("実行するコマンド:", ' '.join(command))
             subprocess.run(command, shell=True, check=True)
@@ -118,7 +117,7 @@ def main():
                 out_image_path = f'{output_folder}{file_name_without_extension}_frame_{i:08d}.png'
                 print(f"Output: {out_image_path}")
                 ffmpeg.input(input_path, ss=time_interval).output(out_image_path, vframes=1, vcodec='png').run(quiet=True)
-    if gen_low_scale_flag:
+    elif gen_low_scale_flag:
         mode_opt = opt['gen_low_scale']
         input_image_path = mode_opt['input_image_path']
         output_image_path = mode_opt['output_image_path']
@@ -206,7 +205,7 @@ def main():
             shutil.move(final_output, output_path)
             print("セグメントが1つのため、結合処理は実施しません")
 
-        shutil.rmtree(base_path)
+        # shutil.rmtree(base_path)
         print(f"base_path: {base_path}")
 
 if __name__ == "__main__":

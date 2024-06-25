@@ -1,7 +1,22 @@
 {
+    "common": {
+        "input_base_path": "D:\\tmp\\sr_movie\\",
+        "input_file": "385174.mp4",
+        "output_base_path": "D:\\tmp\\sr_movie\\",
+        "upscale_rate": 4
+    },
+    "test": {
+        "output_interval_sec": 300,
+        "upscale_rates": [
+            1,
+            2,
+            4
+        ],
+        "output_px_width": 1280
+    },
     "create_dataset": {
         "input_video_path": [
-            "Z:\\create\\動画\\xxx.mp4"
+            "Z:\\create\\movie\\xxx.mp4"
         ],
         "output_image_path": "D:\\sr-movie\\training\\datasets\\raw\\",
         "frame_extraction_interval": 90
@@ -10,5 +25,14 @@
         "input_image_path": "D:\\sr-movie\\training\\datasets\\raw\\",
         "output_image_path": "D:\\sr-movie\\training\\datasets\\low_scale\\",
         "width_px": 480
+    },
+    "upscale": {
+        "input_file": "385174.mp4",
+        "time_segments": [
+            [
+                "00:10:07",
+                "00:36:16"
+            ]
+        ]
     }
 }
