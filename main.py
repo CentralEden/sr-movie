@@ -116,8 +116,9 @@ def main():
             for i, time_interval in enumerate(time_intervals[1:]):
                 out_image_path = f'{output_folder}{file_name_without_extension}_frame_{i:08d}.png'
                 print(f"Output: {out_image_path}")
-                ffmpeg.input(input_path, ss=time_interval).output(out_image_path, vframes=1, vcodec='png').run(quiet=True)
+                ffmpeg.input(input_path, ss=time_interval).output(out_image_path, vframes=1, vcodec='png').run(quiet=True, overwrite_output=True)
     elif gen_low_scale_flag:
+        print("Start Generate Low Scale Image Mode")
         mode_opt = opt['gen_low_scale']
         input_image_path = mode_opt['input_image_path']
         output_image_path = mode_opt['output_image_path']
@@ -130,83 +131,67 @@ def main():
             ffmpeg.input(path).output(out_image_path, vf=f'scale={width_px}:-1', vcodec='png').run(quiet=True, overwrite_output=True)
 
     else:
-
-        input_file = '385174.mp4'
-        time_segments = [
-            ('00:10:07', '00:36:16'),
-            # ('01:59:26', '02:31:40'),
-            # 他の時間セグメントをここに追加
-        ]
-        upscale_rate = 4
-        input_path = f'D:\\tmp\\sr_movie\\{input_file}'
+        print("Start Upscale Mode")
+        input_file = opt['common']['input_file']
+        time_segments = opt['upscale']['time_segments']
+        upscale_rate = opt['upscale']['upscale_rate']
+        input_path = os.path.join(opt['common']['input_base_path'] , opt['common']['input_file'])
         output_path = f'.\\out.mp4'        
-        base_path = 'D:\\tmp\\sr_movie\\'
-        base_path = create_directory_for_process(base_path)
-
-        # ファイル名を取得
+        output_base_path = opt['common']['output_base_path']
+        output_base_path = create_directory_for_process(output_base_path)
         file_name_without_extension = os.path.splitext(input_file)[0]
 
         for i, (start_time, end_time) in enumerate(time_segments):
-            print(f"処理開始: セグメント {i+1} ({start_time} から {end_time})")
-            # 動画切り出し
-            trimmed_video = f'{base_path}\\trim_{i}.mp4'
-            # ssをインプットに入れる
+            print(f"Start Segment {i+1}: ({start_time} to {end_time})")
+            trimmed_video = f'{output_base_path}\\trim_{i}.mp4'
             subprocess.run(['ffmpeg', '-ss', start_time, '-to', end_time, '-i', input_path, '-c:v', 'h264_nvenc', trimmed_video])
             # subprocess.run(['ffmpeg', '-ss', start_time, '-to', end_time, '-i', input_path, '-c', 'copy', trimmed_video])
-            # 画像変換
-            image_output_folder = f'{base_path}\\resize_img_{i}\\'
+            image_output_folder = f'{output_base_path}\\resize_img_{i}\\'
             os.makedirs(image_output_folder)
             run_ffmpeg_command(trimmed_video, f'{image_output_folder}image_%08d.png', {'vf': f'scale={1280 / upscale_rate}:-1', 'vcodec': 'png'})
 
-            # 超解像処理
-            print("超解像処理開始:", datetime.datetime.now())
-            # 超解像処理後の画像を出力するフォルダ名を定義してフォルダ作成
-            upscale_output_folder = f'{base_path}\\upscale_img_{i}\\'
+            print("Start Super Resolution:", datetime.datetime.now())
+            upscale_output_folder = f'{output_base_path}\\upscale_img_{i}\\'
             os.makedirs(upscale_output_folder, exist_ok=True)
             command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '--model_path', 'C:\\Users\\batyo\\Documents\\repo\\sr-movie\\Real-ESRGAN\\experiments\\finetune_RealESRGANx4plus_400k_pairdata\\models\\net_g_160000.pth', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
             # command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '-n', 'realesr-general-x4v3', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
-            print("実行するコマンド:", ' '.join(command))
             subprocess.run(command, shell=True, check=True)
-            print("超解像処理終了:", datetime.datetime.now())
+            print("End Super Resolution:", datetime.datetime.now())
 
-            # image_output_folderのフォルダ削除
+
             shutil.rmtree(image_output_folder)
-            print(f"{image_output_folder} を削除しました")
+            print(f"Delete {image_output_folder}")
 
-            # 動画に戻す
-            enhanced_video = f'{base_path}\\enhanced_video_{i}.mp4'
-            # 動画のプロパティを取得して表示
+            enhanced_video = f'{output_base_path}\\enhanced_video_{i}.mp4'
             frame_rate, vcodec, pix_fmt, duration_hms = get_video_properties(trimmed_video)
-            print(f"フレームレート: {frame_rate}, ビデオコーデック: {vcodec}, ピクセルフォーマット: {pix_fmt}, 動画時間: {duration_hms}")
+            print(f"Frame Rate: {frame_rate}, Video Codec: {vcodec}, Pixel Format: {pix_fmt}, Duration: {duration_hms}")
             run_ffmpeg_command(f'{upscale_output_folder}image_%08d_out.png', enhanced_video, {'t': duration_hms ,'r': f'{frame_rate}', 'vcodec': vcodec, 'pix_fmt': f'{pix_fmt}'})
-            # upscale_output_folderのフォルダ削除
-            # shutil.rmtree(upscale_output_folder)
-            # print(f"{upscale_output_folder} を削除しました")
 
-            # 音声と結合
-            final_output = f'{base_path}\\{file_name_without_extension}_{i}.mp4'
+            # shutil.rmtree(upscale_output_folder)
+            # print(f"Delete {upscale_output_folder}")
+
+            final_output = f'{output_base_path}\\{file_name_without_extension}_{i}.mp4'
             command = ['ffmpeg', '-i', enhanced_video, '-i', trimmed_video, '-c:v', 'h264_nvenc', '-map', '0:v', '-c:a', 'copy', '-map', '1:a', final_output]
             subprocess.run(command, shell=True, check=True)
 
-            print(f"処理終了: セグメント {i+1}")
+            print(f"End Segment {i+1}")
         output_path = os.path.join(os.path.dirname(input_path), f'{file_name_without_extension}_upscaled.mp4')
         if len(time_segments) > 1:
-            # すべてのセグメントの動画を結合
-            final_videos = [f'{base_path}\\{file_name_without_extension}_{i}.mp4' for i in range(len(time_segments))]
+            final_videos = [f'{output_base_path}\\{file_name_without_extension}_{i}.mp4' for i in range(len(time_segments))]
             concat_command = ['ffmpeg', '-safe', '0', '-f', 'concat', '-i']
-            with open(f'{base_path}\\filelist.txt', 'w') as filelist:
+            with open(f'{output_base_path}\\filelist.txt', 'w') as filelist:
                 for video in final_videos:
                     filelist.write(f"file '{video}'\n")
-            concat_command.append(f'{base_path}\\filelist.txt')
+            concat_command.append(f'{output_base_path}\\filelist.txt')
             concat_command.extend(['-c', 'copy', output_path])
             subprocess.run(concat_command, shell=True, check=True)
-            print(f"全セグメントを結合した動画を作成しました: {output_path}")
+            print(f"Create Merged Video: {output_path}")
         else:
             shutil.move(final_output, output_path)
-            print("セグメントが1つのため、結合処理は実施しません")
+            print("No need to merge because there is only one segment")
 
-        # shutil.rmtree(base_path)
-        print(f"base_path: {base_path}")
+        # shutil.rmtree(output_base_path)
+        print(f"output_base_path: {output_base_path}")
 
 if __name__ == "__main__":
     main()
