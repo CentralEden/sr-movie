@@ -97,8 +97,8 @@ def main():
             print("実行するコマンド:", ' '.join(command))
             subprocess.run(command, shell=True, check=True)
     elif create_ds_flag:
+        print("Start Create Dataset Mode")
         mode_opt = opt['create_dataset']
-        print("データセット作成モードでの処理を開始します。")
         output_folder = mode_opt['output_image_path']
         os.makedirs(output_folder, exist_ok=True) 
 
@@ -107,7 +107,7 @@ def main():
             video_info = ffmpeg.probe(input_path)
             total_duration = float(video_info['format']['duration'])
             time_intervals = []
-            for seconds in range(0, int(total_duration), mode_opt['frame_extraction_interval']):  # 秒数
+            for seconds in range(0, int(total_duration), mode_opt['frame_extraction_interval']):
                 hours = seconds // 3600
                 minutes = (seconds % 3600) // 60
                 seconds = seconds % 60
@@ -163,7 +163,7 @@ def main():
             # 超解像処理後の画像を出力するフォルダ名を定義してフォルダ作成
             upscale_output_folder = f'{base_path}\\upscale_img_{i}\\'
             os.makedirs(upscale_output_folder, exist_ok=True)
-            command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '--model_path', 'C:\\Users\\batyo\\Documents\\repo\\sr-movie\\Real-ESRGAN\\experiments\\finetune_RealESRGANx4plus_400k_pairdata\\models\\net_g_5000.pth', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
+            command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '--model_path', 'C:\\Users\\batyo\\Documents\\repo\\sr-movie\\Real-ESRGAN\\experiments\\finetune_RealESRGANx4plus_400k_pairdata\\models\\net_g_160000.pth', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
             # command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '-n', 'realesr-general-x4v3', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
             print("実行するコマンド:", ' '.join(command))
             subprocess.run(command, shell=True, check=True)
