@@ -140,6 +140,7 @@ def main():
         output_base_path = opt['common']['output_base_path']
         output_base_path = create_directory_for_process(output_base_path)
         file_name_without_extension = os.path.splitext(input_file)[0]
+        remove_tmp_flag = opt['common']['remove_tmp_flag']
 
         for i, (start_time, end_time) in enumerate(time_segments):
             print(f"Start Segment {i+1}: ({start_time} to {end_time})")
@@ -158,17 +159,18 @@ def main():
             subprocess.run(command, shell=True, check=True)
             print("End Super Resolution:", datetime.datetime.now())
 
-
-            shutil.rmtree(image_output_folder)
-            print(f"Delete {image_output_folder}")
+            if remove_tmp_flag:
+                shutil.rmtree(image_output_folder)
+                print(f"Delete {image_output_folder}")
 
             enhanced_video = f'{output_base_path}\\enhanced_video_{i}.mp4'
             frame_rate, vcodec, pix_fmt, duration_hms = get_video_properties(trimmed_video)
             print(f"Frame Rate: {frame_rate}, Video Codec: {vcodec}, Pixel Format: {pix_fmt}, Duration: {duration_hms}")
             run_ffmpeg_command(f'{upscale_output_folder}image_%08d_out.png', enhanced_video, {'t': duration_hms ,'r': f'{frame_rate}', 'vcodec': vcodec, 'pix_fmt': f'{pix_fmt}'})
-
-            # shutil.rmtree(upscale_output_folder)
-            # print(f"Delete {upscale_output_folder}")
+            
+            if remove_tmp_flag:
+                shutil.rmtree(upscale_output_folder)
+                print(f"Delete {upscale_output_folder}")
 
             final_output = f'{output_base_path}\\{file_name_without_extension}_{i}.mp4'
             command = ['ffmpeg', '-i', enhanced_video, '-i', trimmed_video, '-c:v', 'h264_nvenc', '-map', '0:v', '-c:a', 'copy', '-map', '1:a', final_output]
@@ -190,7 +192,10 @@ def main():
             shutil.move(final_output, output_path)
             print("No need to merge because there is only one segment")
 
-        # shutil.rmtree(output_base_path)
+        if remove_tmp_flag:
+            shutil.rmtree(output_base_path)
+            print(f"Delete {output_base_path}")
+
         print(f"output_base_path: {output_base_path}")
 
 if __name__ == "__main__":

@@ -33,6 +33,7 @@
                 "00:36:16"
             ]
         ],
-        "upscale_rate": 4
+        "upscale_rate": 4,
+        "remove_tmp_flag": false
     }
 }
