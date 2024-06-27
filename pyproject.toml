@@ -21,6 +21,7 @@ idna = "^3.4"
 certifi = "^2022.12.7"
 scipy = "^1.13.1"
 ffmpeg-python = "^0.2.0"
+pydantic = "^2.7.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -39,7 +40,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.taskipy.tasks]
-test = "python main.py test"
-create_ds = "python main.py create_ds"
-gen_low_scale = "python main.py gen_low_scale"
-upscale = "python main.py upscale"
+check = "python sr_movie/main.py check"
+create_ds = "python sr_movie/main.py create_ds"
+gen_low_scale = "python sr_movie/main.py gen_low_scale"
+upscale = "python sr_movie/main.py upscale"

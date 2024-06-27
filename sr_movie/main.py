@@ -6,7 +6,8 @@ import subprocess
 import sys
 import json
 
-import cv2
+from conf.config import Config
+
 import glob
 
 def run_ffmpeg_command(input_file, output_file, command_args):
@@ -55,34 +56,31 @@ def main():
 
 
     # コマンドライン引数からテストフラグを取得
-    test_flag = False
+    check_flag = False
     create_ds_flag = False
     gen_low_scale_flag = False
     if len(sys.argv) > 1:
-        test_flag = sys.argv[1].lower() == 'test'
+        check_flag = sys.argv[1].lower() == 'check'
         create_ds_flag = sys.argv[1].lower() == 'create_ds'
         gen_low_scale_flag = sys.argv[1].lower() == 'gen_low_scale'
     
 
     # config.jsonファイルのパス
-    config_path = os.path.join(os.path.dirname(__file__), '.\config.json')
-    # config.jsonファイルを読み込む
-    with open(config_path, 'r', encoding='utf-8') as config_file:
-        opt = json.load(config_file)
+    conf = Config()
 
-    if test_flag:
-        print("Start Test Mode")
-        input_path = os.path.join(opt['common']['input_base_path'] , opt['common']['input_file'])
-        output_base_path = create_directory_for_process(opt['common']['output_base_path'])
+    if check_flag:
+        print("Start Check Mode")
+        input_path = os.path.join(conf.common.input_base_path , conf.common.input_file)
+        output_base_path = create_directory_for_process(conf.common.output_base_path)
         video_info = ffmpeg.probe(input_path)
         total_duration = float(video_info['format']['duration'])
         time_intervals = []
-        for seconds in range(0, int(total_duration), opt['test']['output_interval_sec']):  # 秒数
+        for seconds in range(0, int(total_duration), conf.check.output_interval_sec):  # 秒数
             hours = seconds // 3600
             minutes = (seconds % 3600) // 60
             seconds = seconds % 60
             time_intervals.append(f"{hours:02}:{minutes:02}:{seconds:02}")
-        for upscale in opt['test']['upscale_rates']:
+        for upscale in conf.check.upscale_rates:
             print(f"Upscale rate: {upscale}")
             upscale_output_folder = f'{output_base_path}\\upscale_{upscale}\\'
             resize_output_folder = f'{output_base_path}\\resize_{upscale}\\'
@@ -91,10 +89,9 @@ def main():
             # resize
             for i, time_interval in enumerate(time_intervals[1:]):
                 resize_image_path = f'{resize_output_folder}frame_{i:08d}.png'
-                ffmpeg.input(input_path, ss=time_interval).output(resize_image_path, vframes=1,vf=f'scale={opt["test"]["output_px_width"] / upscale}:-1', vcodec='png').run()           
+                ffmpeg.input(input_path, ss=time_interval).output(resize_image_path, vframes=1,vf=f'scale={conf.check.output_px_width / upscale}:-1', vcodec='png').run(capture_stderr=True)           
             # super resolution
             command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', resize_output_folder, '-o', upscale_output_folder, '-n', 'realesr-general-x4v3', '-g', '0', '-s', f'{upscale}']
-            print("実行するコマンド:", ' '.join(command))
             subprocess.run(command, shell=True, check=True)
     elif create_ds_flag:
         print("Start Create Dataset Mode")
