@@ -95,16 +95,15 @@ def main():
             subprocess.run(command, shell=True, check=True)
     elif create_ds_flag:
         print("Start Create Dataset Mode")
-        mode_opt = opt['create_dataset']
-        output_folder = mode_opt['output_image_path']
+        output_folder = conf.create_dataset.output_image_path
         os.makedirs(output_folder, exist_ok=True) 
 
-        for input_path in mode_opt['input_video_path']:
+        for input_path in conf.create_dataset.input_video_path:
             file_name_without_extension = os.path.splitext(os.path.basename(input_path))[0]
             video_info = ffmpeg.probe(input_path)
             total_duration = float(video_info['format']['duration'])
             time_intervals = []
-            for seconds in range(0, int(total_duration), mode_opt['frame_extraction_interval']):
+            for seconds in range(0, int(total_duration), conf.create_dataset.frame_extraction_interval):
                 hours = seconds // 3600
                 minutes = (seconds % 3600) // 60
                 seconds = seconds % 60
@@ -116,11 +115,10 @@ def main():
                 ffmpeg.input(input_path, ss=time_interval).output(out_image_path, vframes=1, vcodec='png').run(quiet=True, overwrite_output=True)
     elif gen_low_scale_flag:
         print("Start Generate Low Scale Image Mode")
-        mode_opt = opt['gen_low_scale']
-        input_image_path = mode_opt['input_image_path']
-        output_image_path = mode_opt['output_image_path']
+        input_image_path = conf.gen_low_scale.input_image_path
+        output_image_path = conf.gen_low_scale.output_image_path
         os.makedirs(output_image_path, exist_ok=True)
-        width_px = mode_opt['width_px']
+        width_px = conf.gen_low_scale.width_px
         path_list = sorted(glob.glob(os.path.join(input_image_path, '*')))
         for path in path_list:
             print(f"Input: {path}")
@@ -129,15 +127,14 @@ def main():
 
     else:
         print("Start Upscale Mode")
-        input_file = opt['common']['input_file']
-        time_segments = opt['upscale']['time_segments']
-        upscale_rate = opt['upscale']['upscale_rate']
-        input_path = os.path.join(opt['common']['input_base_path'] , opt['common']['input_file'])
-        output_path = f'.\\out.mp4'        
-        output_base_path = opt['common']['output_base_path']
+        input_file = conf.common.input_file
+        time_segments = conf.upscale.time_segments
+        upscale_rate = conf.upscale.upscale_rate
+        input_path = os.path.join(conf.common.input_base_path , conf.common.input_file)
+        output_base_path = conf.common.output_base_path
         output_base_path = create_directory_for_process(output_base_path)
         file_name_without_extension = os.path.splitext(input_file)[0]
-        remove_tmp_flag = opt['common']['remove_tmp_flag']
+        remove_tmp_flag = conf.upscale.remove_tmp_flag
 
         for i, (start_time, end_time) in enumerate(time_segments):
             print(f"Start Segment {i+1}: ({start_time} to {end_time})")
@@ -151,7 +148,7 @@ def main():
             print("Start Super Resolution:", datetime.datetime.now())
             upscale_output_folder = f'{output_base_path}\\upscale_img_{i}\\'
             os.makedirs(upscale_output_folder, exist_ok=True)
-            command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '--model_path', 'C:\\Users\\batyo\\Documents\\repo\\sr-movie\\Real-ESRGAN\\experiments\\finetune_RealESRGANx4plus_400k_pairdata\\models\\net_g_160000.pth', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
+            command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '--model_path', 'C:\\Users\\batyo\\Documents\\repo\\sr-movie\\Real-ESRGAN\\experiments\\finetune_RealESRGANx4plus_400k_pairdata\\models\\net_g_315000.pth', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
             # command = ['python', '.\\Real-ESRGAN\\inference_realesrgan.py', '-i', image_output_folder, '-o', upscale_output_folder, '-n', 'realesr-general-x4v3', '-g', '0', '-s', f'{upscale_rate}', '-dn', "0.1"]
             subprocess.run(command, shell=True, check=True)
             print("End Super Resolution:", datetime.datetime.now())
