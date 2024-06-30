@@ -34,6 +34,12 @@ priority = 'supplemental'
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1.13.0"
+black = "^24.4.2"
+flake8 = "^7.1.0"
+isort = "^5.13.2"
+mypy = "^1.10.1"
+typed-ast = "^1.5.5"
+pysen = "^0.11.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -44,3 +50,15 @@ check = "python sr_movie/main.py check"
 create_ds = "python sr_movie/main.py create_ds"
 gen_low_scale = "python sr_movie/main.py gen_low_scale"
 upscale = "python sr_movie/main.py upscale"
+
+
+[tool.pysen.lint]
+enable_black = true
+enable_flake8 = true
+enable_isort = true
+enable_mypy = true
+mypy_preset = "strict"
+line_length = 120
+py_version = "py39"
+[[tool.pysen.lint.mypy_targets]]
+  paths = ["./sr_movie"]
