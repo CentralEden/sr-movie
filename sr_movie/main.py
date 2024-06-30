@@ -203,11 +203,17 @@ def main():
             enhanced_video = f"{output_base_path}\\enhanced_video_{i}.mp4"
             frame_rate, vcodec, pix_fmt, duration_hms = get_video_properties(trimmed_video)
             print(f"Frame Rate: {frame_rate}, Video Codec: {vcodec}, Pixel Format: {pix_fmt}, Duration: {duration_hms}")
-            run_ffmpeg_command(
+            command = [
+                "ffmpeg",
+                "-r",
+                f"{frame_rate}",
+                "-i",
                 f"{upscale_output_folder}image_%08d_out.png",
-                enhanced_video,
-                {"t": duration_hms, "r": f"{frame_rate}", "vcodec": vcodec, "pix_fmt": f"{pix_fmt}"},
-            )
+                "-c:v",
+                "h264_nvenc",
+                enhanced_video
+            ]
+            subprocess.run(command, shell=True, check=True)
 
             if remove_tmp_flag:
                 shutil.rmtree(upscale_output_folder)
