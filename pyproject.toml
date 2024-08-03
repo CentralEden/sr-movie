@@ -47,6 +47,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.taskipy.tasks]
 check = "python sr_movie/main.py check"
+frame_extract = "python sr_movie/main.py frame_extract"
 create_ds = "python sr_movie/main.py create_ds"
 gen_low_scale = "python sr_movie/main.py gen_low_scale"
 upscale = "python sr_movie/main.py upscale"

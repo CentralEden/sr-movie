@@ -61,12 +61,14 @@ def main():
 
     # コマンドライン引数からテストフラグを取得
     check_flag = False
-    create_ds_flag = False
+    frame_extract_flag = False
     gen_low_scale_flag = False
+    create_ds_flag = False
     if len(sys.argv) > 1:
         check_flag = sys.argv[1].lower() == "check"
         create_ds_flag = sys.argv[1].lower() == "create_ds"
         gen_low_scale_flag = sys.argv[1].lower() == "gen_low_scale"
+        frame_extract_flag = sys.argv[1].lower() == "frame_extract"
 
     # config.jsonファイルのパス
     conf = Config()
@@ -111,17 +113,17 @@ def main():
                 f"{upscale}",
             ]
             subprocess.run(command, shell=True, check=True)
-    elif create_ds_flag:
-        print("Start Create Dataset Mode")
-        output_folder = conf.create_dataset.output_image_path
+    elif frame_extract_flag:
+        print("Start Frame Extract Mode")
+        output_folder = conf.frame_extract.output_image_path
         os.makedirs(output_folder, exist_ok=True)
 
-        for input_path in conf.create_dataset.input_video_path:
+        for input_path in conf.frame_extract.input_video_path:
             file_name_without_extension = os.path.splitext(os.path.basename(input_path))[0]
             video_info = ffmpeg.probe(input_path)
             total_duration = float(video_info["format"]["duration"])
             time_intervals = []
-            for seconds in range(0, int(total_duration), conf.create_dataset.frame_extraction_interval):
+            for seconds in range(0, int(total_duration), conf.frame_extract.frame_extraction_interval):
                 hours = seconds // 3600
                 minutes = (seconds % 3600) // 60
                 seconds = seconds % 60
