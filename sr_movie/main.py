@@ -140,8 +140,8 @@ def main():
         os.makedirs(output_image_path, exist_ok=True)
         width_px = conf.gen_low_scale.width_px
         path_list = sorted(glob.glob(os.path.join(input_image_path, "*")))
-        for path in path_list:
-            print(f"Input: {path}")
+        for i, path in enumerate(path_list):
+            print(f"({i}/{len(path_list)}) Input: {path}")
             out_image_path = f"{output_image_path}{os.path.basename(path)}"
             ffmpeg.input(path).output(out_image_path, vf=f"scale={width_px}:-1", vcodec="png").run(
                 quiet=True, overwrite_output=True
