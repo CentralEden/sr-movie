@@ -15,7 +15,7 @@ class CheckConfig(BaseModel):
     output_px_width: int = 1280
 
 
-class CreateDatasetConfig(BaseModel):
+class FrameExtractConfig(BaseModel):
     input_video_path: List[str] = ["Z:\\create\\4k\\xxx.mp4"]
     output_image_path: str = "D:\\sr-movie\\training\\datasets\\raw_30\\"
     frame_extraction_interval: int = 30
@@ -37,7 +37,7 @@ class UpscaleConfig(BaseModel):
 class Config(BaseModel):
     common: CommonConfig = CommonConfig()
     check: CheckConfig = CheckConfig()
-    create_dataset: CreateDatasetConfig = CreateDatasetConfig()
+    frame_extract: FrameExtractConfig = FrameExtractConfig()
     gen_low_scale: GenLowScaleConfig = GenLowScaleConfig()
     upscale: UpscaleConfig = UpscaleConfig()
 
