@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import ffmpeg
 from conf.config import Config
@@ -148,6 +149,41 @@ def main():
             ffmpeg.input(path).output(out_image_path, vf=f"scale={width_px}:-1", vcodec="png").run(
                 quiet=True, overwrite_output=True
             )
+    
+    elif create_ds_flag:
+        print("Start Create Dataset Mode")
+        input_image_path = conf.create_dataset.input_image_path
+        root_path = Path(input_image_path).parent
+        multiscale_path = os.path.join(root_path, "multiscale")
+        os.makedirs(multiscale_path, exist_ok=True)
+        # multiscale
+        command = [
+                "python",
+                ".\\Real-ESRGAN\\scripts\\generate_multiscale_DF2K.py",
+                "--input",
+                input_image_path,
+                "--output",
+                multiscale_path,
+            ]
+        subprocess.run(command, shell=True, check=True)
+
+        # meta info
+        command = [
+                "python",
+                ".\\Real-ESRGAN\\scripts\\generate_meta_info.py",
+                "--input",
+                input_image_path,
+                multiscale_path,
+                "--root",
+                root_path,
+                root_path,
+                "--meta_info",
+                os.path.join(root_path, "meta_info.txt"),
+            ]
+        subprocess.run(command, shell=True, check=True)
+
+        print("End Create Dataset Mode")
+
 
     else:
         print("Start Upscale Mode")
