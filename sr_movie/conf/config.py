@@ -31,6 +31,10 @@ class CreateDatasetConfig(BaseModel):
     input_image_path: str = "D:\\sr-movie\\training\\datasets\\raw_4k\\"
 
 
+class FineTuningConfig(BaseModel):
+    input_path: str = "D:\\sr-movie\\training\\datasets\\"
+
+
 class UpscaleConfig(BaseModel):
     input_file: str = "385174.mp4"
     time_segments: List[Tuple[str, str]] = [("00:10:07", "00:36:16")]
@@ -44,6 +48,7 @@ class Config(BaseModel):
     frame_extract: FrameExtractConfig = FrameExtractConfig()
     gen_low_scale: GenLowScaleConfig = GenLowScaleConfig()
     create_dataset: CreateDatasetConfig = CreateDatasetConfig()
+    fine_tuning: FineTuningConfig = FineTuningConfig()
     upscale: UpscaleConfig = UpscaleConfig()
 
 

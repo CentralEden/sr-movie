@@ -6,8 +6,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-
+import urllib.request
 import ffmpeg
+import ruamel.yaml
+from ruamel.yaml.scalarfloat import ScalarFloat
 from conf.config import Config
 
 
@@ -16,6 +18,43 @@ def run_ffmpeg_command(input_file, output_file, command_args):
     stream = ffmpeg.input(input_file)
     stream = stream.output(output_file, **command_args)
     ffmpeg.run(stream)
+
+
+def float_representer(dumper, data):
+    # 浮動小数点数を通常の小数点表記で表現
+    return dumper.represent_scalar('tag:yaml.org,2002:float', format(data, 'f'))
+
+
+def convert_exponential_to_float(d):
+    if isinstance(d, dict):
+        for k, v in d.items():
+            d[k] = convert_exponential_to_float(v)
+    elif isinstance(d, list):
+        for i in range(len(d)):
+            d[i] = convert_exponential_to_float(d[i])
+    if isinstance(d, float):
+        d = ScalarFloat(d, prec=6)
+    return d
+
+
+def replace_yaml_keys(input_yaml_path, output_yaml_path, replacements):
+    yaml = ruamel.yaml.YAML()
+    yaml.preserve_quotes = True
+    yaml.representer.add_representer(ScalarFloat, float_representer)
+    with open(input_yaml_path, 'r', encoding='utf-8') as file:
+        yaml_content = yaml.load(file)
+
+    for keys, new_value in replacements.items():
+        # ネストされたキーにアクセスして値を置換
+        d = yaml_content
+        for key in keys[:-1]:
+            d = d[key]
+        d[keys[-1]] = new_value
+
+    yaml_content = convert_exponential_to_float(yaml_content)
+    print(yaml_content)
+    with open(output_yaml_path, 'w', encoding='utf-8') as file:
+        yaml.dump(yaml_content, file)
 
 
 def create_directory_for_process(base_path):
@@ -65,11 +104,13 @@ def main():
     frame_extract_flag = False
     gen_low_scale_flag = False
     create_ds_flag = False
+    fine_tuning_flag = False
     if len(sys.argv) > 1:
         check_flag = sys.argv[1].lower() == "check"
         create_ds_flag = sys.argv[1].lower() == "create_ds"
         gen_low_scale_flag = sys.argv[1].lower() == "gen_low_scale"
         frame_extract_flag = sys.argv[1].lower() == "frame_extract"
+        fine_tuning_flag = sys.argv[1].lower() == "fine_tuning"
 
     # config.jsonファイルのパス
     conf = Config()
@@ -183,6 +224,54 @@ def main():
         subprocess.run(command, shell=True, check=True)
 
         print("End Create Dataset Mode")
+
+    elif fine_tuning_flag:
+        print("Start Fine Tuning Mode")
+        input_path = conf.fine_tuning.input_path
+
+        # create training directory
+        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        training_directory = os.path.join("training", f"training_{current_time}")
+        os.makedirs(training_directory, exist_ok=True)
+        print(f"Trainingディレクトリ {training_directory} を作成しました。")
+        
+        # download pretrained model
+        pretrained_model_path = ".\\Real-ESRGAN\\experiments\\pretrained_models\\"
+        os.makedirs(os.path.dirname(pretrained_model_path), exist_ok=True)
+        url = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth"
+        pretrained_model_file = os.path.join(pretrained_model_path, "RealESRGAN_x4plus.pth")
+        if not os.path.exists(pretrained_model_file):
+            urllib.request.urlretrieve(url, pretrained_model_file)
+            print(f"Downloaded {url} to {pretrained_model_file}")
+        url = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.3/RealESRGAN_x4plus_netD.pth"
+        pretrained_D_model_file = os.path.join(pretrained_model_path, "RealESRGAN_x4plus_netD.pth")
+        if not os.path.exists(pretrained_D_model_file):
+            urllib.request.urlretrieve(url, pretrained_D_model_file)
+            print(f"Downloaded {url} to {pretrained_D_model_file}")
+
+        # create train config yaml
+        input_yaml_path = '.\\Real-ESRGAN\\options\\finetune_realesrgan_x4plus.yml'  # 入力YAMLファイルのパス
+        output_yaml_path = os.path.join(training_directory, 'finetune_realesrgan_x4plus.yml')  # 出力YAMLファイルのパス
+        replacements = {
+            ('datasets', 'train', 'name'): f'training_{current_time}',
+            ('datasets', 'train', 'dataroot_gt'): input_path,
+            ('datasets', 'train', 'meta_info'): os.path.join(input_path, 'meta_info.txt'),
+            ('path', 'pretrain_network_g'): pretrained_model_file,
+            ('path', 'pretrain_network_d'): pretrained_D_model_file,
+        }
+        replace_yaml_keys(input_yaml_path, output_yaml_path, replacements)
+
+        # Start training
+        command = [
+            "python",
+            ".\\Real-ESRGAN\\realesrgan\\train.py",
+            "-opt",
+            output_yaml_path,
+            "--auto_resume",
+        ]
+        subprocess.run(command, shell=True, check=True)
+
+        print("End Fine Tuning Mode")
 
 
     else:
